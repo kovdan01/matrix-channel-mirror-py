@@ -4,7 +4,6 @@ import asyncio
 from nio import AsyncClient, UploadResponse
 import requests
 from lxml import html
-import datetime
 from datetime import datetime as dt
 import configparser
 import sys
@@ -13,7 +12,7 @@ import os
 def downloadImage(url):
     image = requests.get(url)
     if image.status_code != 200:
-        print("error getting image")
+        print("error getting image", file=sys.stderr)
         return
 
     f = open("image", "w+b")
@@ -22,7 +21,7 @@ def downloadImage(url):
 
 
 async def main():
-    dirpath = os.path.dirname(os.path.abspath(file))
+    dirpath = os.path.dirname(os.path.abspath(__file__))
     configParser = configparser.RawConfigParser()
     configFilePath = dirpath + "/config.ini"
 
@@ -38,17 +37,17 @@ async def main():
 
     with open(dirpath + "/channels.csv") as f:
         channelsText = f.readlines()
-    # you may also want to remove whitespace characters like \n at the end of each line
+    # you may also want to remove whitespace characters like `\n` at the end of each line
     channelsText = [x.strip() for x in channelsText]
 
-    now = datetime.datetime.now()
+    now = dt.utcnow()
 
     for channel in channelsText:
         tgChannel, matrixChannel = channel.split(";")
         page = requests.get("https://t.me/s/" + tgChannel)
 
         if page.status_code != 200:
-            print("error getting channel page")
+            print("error getting channel page", file=sys.stderr)
             sys.exit(1)
 
         tree = html.fromstring(page.content)
@@ -78,7 +77,7 @@ async def main():
                             f, content_type="image/jpeg"
                         )
                     if not isinstance(matrixPath, UploadResponse):
-                        print(f"Failed to upload image. Failure response: {matrixPath}")
+                        print(f"Failed to upload image. Failure response: {matrixPath}", file=sys.stderr)
 
                     await client.room_send(
                         room_id=matrixChannel,

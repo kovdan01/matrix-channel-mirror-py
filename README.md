@@ -19,7 +19,7 @@ pip install lxml matrix-nio cssselect
 Use cron or similar to call it every few hours (as [configured](#Configure) at `updateInterval`) to sync
 
 ```
-0 0,4,8,12,16,20 * * * /usr/bin/python3 path/to/the/mirror/main.py
+0 0,4,8,12,16,20 * * * /usr/bin/python3 /path/to/the/mirror/main.py
 ```
 
 ## Configure
