@@ -9,6 +9,7 @@ import configparser
 import sys
 import os
 
+
 def downloadImage(url):
     image = requests.get(url)
     if image.status_code != 200:
@@ -30,7 +31,7 @@ async def main():
     HSURL = configParser.get("matrix", "HSURL")
     UserID = configParser.get("matrix", "UserID")
     PW = configParser.get("matrix", "PW")
-    hours = int(configParser.get("matrix", "updateInterval"))
+    minutes = int(configParser.get("matrix", "updateInterval"))
 
     client = AsyncClient(HSURL, UserID)
     await client.login(PW)
@@ -55,15 +56,32 @@ async def main():
 
         for s in tree.cssselect(".tgme_widget_message_wrap"):
             postedDate = dt.strptime(
-                s.cssselect("time")[0].get("datetime"), "%Y-%m-%dT%H:%M:%S+00:00"
+                s.cssselect("time")[-1].get("datetime"), "%Y-%m-%dT%H:%M:%S+00:00"
             )
 
-            if (now - postedDate).total_seconds() < 60 * 60 * hours:
+            if (now - postedDate).total_seconds() < 60 * minutes:
                 posted = True
 
-                textElement = s.cssselect(".tgme_widget_message_text.js-message_text")[
-                    0
-                ]
+                origLink = s.cssselect(".tgme_widget_message_date")[0].get("href")
+                textElement = s.cssselect(".tgme_widget_message_text.js-message_text")
+                if len(textElement) == 0:
+                    # consider a non-supported message
+                    # just send a link
+                    text = "This post is only available in telegram (content type not supported).\n"
+                    text += "See " + origLink
+
+                    sendResult = await client.room_send(
+                        room_id=matrixChannel,
+                        message_type="m.room.message",
+                        content={
+                            "msgtype": "m.text",
+                            "body": text,
+                        },
+                    )
+
+                    continue
+
+                textElement = textElement[0]
                 htmlMessage = html.tostring(textElement).decode("utf-8")
 
                 image = s.cssselect(".tgme_widget_message_photo_wrap")
@@ -77,7 +95,10 @@ async def main():
                             f, content_type="image/jpeg"
                         )
                     if not isinstance(matrixPath, UploadResponse):
-                        print(f"Failed to upload image. Failure response: {matrixPath}", file=sys.stderr)
+                        print(
+                            f"Failed to upload image. Failure response: {matrixPath}",
+                            file=sys.stderr,
+                        )
 
                     await client.room_send(
                         room_id=matrixChannel,
@@ -104,12 +125,16 @@ async def main():
                         "msgtype": "m.text",
                         "format": "org.matrix.custom.html",
                         "body": textElement.text_content(),
-                        "formatted_body": htmlMessage,
+                        "formatted_body": "<div>Original post: {}</div>{}".format(
+                            origLink, htmlMessage
+                        ),
                     },
                 )
         if not posted:
             print("nothing to post for " + tgChannel)
+    await client.logout()
     await client.close()
 
 
 asyncio.get_event_loop().run_until_complete(main())
+

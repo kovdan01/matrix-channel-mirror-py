@@ -1,3 +1,5 @@
+Fork of https://git.sr.ht/~bo41/matrix-channel-mirror-py
+
 # Matrix-Telegram Channel Mirror
 
 Matrix bot to mirror public Telegram channels.
@@ -16,10 +18,10 @@ pip install lxml matrix-nio cssselect
 
 ## Run
 
-Use cron or similar to call it every few hours (as [configured](#Configure) at `updateInterval`) to sync
+Use cron or similar to call it every few minutes (as [configured](#Configure) at `updateInterval`) to sync
 
 ```
-0 0,4,8,12,16,20 * * * /usr/bin/python3 /path/to/the/mirror/main.py
+0,15,30,45 * * * * /usr/bin/python3 /path/to/the/mirror/main.py
 ```
 
 ## Configure
