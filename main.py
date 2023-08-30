@@ -8,6 +8,7 @@ from datetime import datetime as dt
 import configparser
 import sys
 import os
+from PIL import Image
 
 
 def downloadImage(url):
@@ -94,6 +95,10 @@ async def main():
                         matrixPath, _ = await client.upload(
                             f, content_type="image/jpeg"
                         )
+
+                    with Image.open("image") as f:
+                        w, h = f.size
+
                     if not isinstance(matrixPath, UploadResponse):
                         print(
                             f"Failed to upload image. Failure response: {matrixPath}",
@@ -109,7 +114,7 @@ async def main():
                                 "mimetype": "image/jpeg",
                                 "thumbnail_info": None,
                                 "thumbnail_url": matrixPath.content_uri,
-                                "w": None,
+                                "w": w / h * 300,
                                 "h": 300,
                             },
                             "msgtype": "m.image",
